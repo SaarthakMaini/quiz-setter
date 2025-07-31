@@ -27,6 +27,21 @@ except:
     redis_available = False
     print("Warning: Redis is not available. Caching will be disabled.")
 
+if redis_available:
+    from celery_app import celery
+    celery.conf.update(
+        broker_url='redis://localhost:6379',
+        result_backend='redis://localhost:6379',
+        task_serializer='json',
+        accept_content=['json'],
+        result_serializer='json',
+        timezone='UTC',
+        enable_utc=True,
+    )
+else:
+    celery = None
+    print("Warning: Celery is disabled due to Redis unavailability.")
+
 @app.route("/")
 def index():
     return "<p>Hello, World!</p>"
@@ -43,6 +58,7 @@ if __name__ == '__main__':
     from routes.score import score_bp
     from routes.question import question_bp
     from routes.dashboard import dashboard_bp
+    from routes.tasks import task_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(subject_bp)
@@ -51,5 +67,6 @@ if __name__ == '__main__':
     app.register_blueprint(score_bp)
     app.register_blueprint(question_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(task_bp)
     
     app.run(debug=True, port=5000)
