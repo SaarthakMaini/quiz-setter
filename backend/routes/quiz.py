@@ -129,3 +129,32 @@ def update_quiz(quiz_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@quiz_bp.route('/api/quizzes/<int:quiz_id>', methods=['PATCH'])
+@jwt_required()
+def patch_quiz(quiz_id):
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(int(current_user_id))
+        if user.role != 'admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        quiz = Quiz.query.get(quiz_id)
+        if not quiz:
+            return jsonify({'error': 'Quiz not found'}), 404
+        
+        data = request.get_json()
+        
+        if 'is_active' in data:
+            quiz.is_active = data['is_active']
+        
+        db.session.commit()
+        
+        if redis_available:
+            redis_client.delete('all_quizzes')
+            redis_client.delete('active_quizzes')
+        
+        return jsonify({'message': 'Quiz status updated successfully', 'is_active': quiz.is_active}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

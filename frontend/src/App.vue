@@ -1,30 +1,50 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <div id="app">
+    <NavBar v-if="isAuthenticated" />
+    <main class="main-content">
+      <router-view />
+    </main>
   </div>
-  <HelloWorld msg="Vite + Vue" />
 </template>
 
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import NavBar from './components/NavBar.vue'
+
+const router = useRouter()
+const isAuthenticated = ref(false)
+
+const checkAuth = () => {
+  const token = localStorage.getItem('token')
+  isAuthenticated.value = !!token
+}
+
+onMounted(() => {
+  checkAuth()
+  
+  // Listen for storage changes (login/logout from other tabs)
+  window.addEventListener('storage', checkAuth)
+})
+
+// Watch for route changes to update auth status
+router.afterEach(() => {
+  checkAuth()
+})
+</script>
+
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+#app {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+
+.main-content {
+  min-height: calc(100vh - 60px);
+  padding-top: 60px;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+.main-content.no-nav {
+  padding-top: 0;
 }
 </style>
